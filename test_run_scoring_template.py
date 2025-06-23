@@ -51,12 +51,12 @@ def retreive_cleanvul_instance_and_generate_scoring_script(score: int):
     sampled_instance_row = sample_random_row(path_to_open)
     template_path = ('scoring_template.py')
     template = Template(template_path.read_text())
-
-    template_vars = {
+    canonical_sol = sampled_instance_row['func_after']
+    template_vars = {   
         # "config_filename": "test_config.json",
-        "commit_msg":get_commit_message_from_url(sampled_instance_row['commit_url'])
-        "original_code":
-        "revised_code":
+        "commit_msg":get_commit_message_from_url(sampled_instance_row['commit_url']),
+        "original_code":sampled_instance_row['func_before'],
+        "revised_code":canonical_sol,
         "context_code":
     }
 
