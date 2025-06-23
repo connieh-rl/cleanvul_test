@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from pathlib import Path
 
-DATASETS_DIR = "/cleanvul_test/datasets"
+DATASETS_DIR = "./datasets"
 
 DATASET_FILES = {
     "vulnscore_0": f"{DATASETS_DIR}/CleanVul_vulnscore_0.csv",

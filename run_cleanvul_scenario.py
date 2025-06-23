@@ -1,10 +1,48 @@
-import pandas as pd
 import argparse
+import subprocess
+import os
+import sys
+from pathlib import Path
 from dataset_manager import load_cleanvul_dataset
+
+def run_setup_script():
+    launch_script = Path('./build_scripts/launch.sh')
+    if not launch_script.exists():
+        print(f" Setup script not found at {launch_script}")
+        print("Please ensure launch.sh exists in the build_scripts directory")
+        return False
+    
+    try:
+        print("🚀 Running setup script to build Docker image and extract datasets...")
+        print("This may take a few minutes...")
+        
+        # Make sure the script is executable
+        os.chmod(launch_script, 0o755)
+        
+        # Run the launch script
+        result = subprocess.run(['bash', str(launch_script)], 
+                              capture_output=True, 
+                              text=True, 
+                              cwd='.')
+        
+        if result.returncode == 0:
+            print("Setup completed successfully!")
+            print("Setup output:", result.stdout)
+            return True
+        else:
+            print("Setup failed!")
+            print("Error output:", result.stderr)
+            return False
+            
+    except Exception as e:
+        print(f"Error running setup script: {e}")
+        return False
 
 def run_cleanvul_scenario(validation_score):
     """Run CleanVul scenario with the specified validation score"""
     dataset_name = f"vulnscore_{int(validation_score)}"
+
+    print("DATASET name:", dataset_name)
 
     # Load the corresponding dataset
     dataset = load_cleanvul_dataset(dataset_name)
@@ -29,8 +67,10 @@ def main():
 
     args = parser.parse_args()
 
+    run_setup_script()
     if args.validation_score is not None:
         if args.validation_score in range(0, 4):
+             
             dataset = run_cleanvul_scenario(args.validation_score)
 
             if dataset is not None:

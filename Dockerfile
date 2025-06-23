@@ -10,4 +10,6 @@ RUN git clone https://github.com/yikun-li/CleanVul.git && \
 
 ENV CLEANVUL_DATASETS=/cleanvul_test/datasets
 
+COPY . .
+
 RUN pip install pandas numpy
