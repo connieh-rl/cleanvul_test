@@ -1,5 +1,8 @@
 import requests
 from urllib.parse import urlparse
+import re
+import javalang
+from itertools import chain
 
 def get_commit_message_from_url(commit_url):
     # Example URL:
@@ -63,14 +66,47 @@ def get_changed_python_functions(commit_url):
 
     return functions
 
-# Example usage
-commit_url = "https://github.com/python/cpython/commit/8d2c7d1e937b59ae3a9b315b8a51c83ab2953bf6"
-funcs = get_changed_python_functions(commit_url)
 
-# Example usage
-commit_url = "https://github.com/elastic/elasticsearch/commit/8de1710b7904192195a99ec14322e6996934a0df"
-message = get_commit_message_from_url(commit_url)
-print("Commit message:")
-print(message)
-print("\nChanged Python functions:")
-print(get_changed_python_functions(commit_url))
+def extract_java_methods_javalang(code):
+    methods = []
+    try:
+        tree = javalang.parse.parse(code)
+        for _, node in tree.filter(javalang.tree.MethodDeclaration):
+            methods.append(node.name)
+    except javalang.parser.JavaSyntaxError as e:
+        print("Java syntax error:", e)
+    except Exception as e:
+        print("Parsing error:", e)
+    return methods
+
+def get_java_methods_from_commit(commit_url):
+    parsed = urlparse(commit_url)
+    path_parts = parsed.path.strip('/').split('/')
+
+    # path_parts should be: ['owner', 'repo', 'commit', 'sha']
+    if len(path_parts) < 4 or path_parts[2] != "commit":
+        raise ValueError("Invalid GitHub commit URL")
+
+    owner, repo, _, sha = path_parts[-4], path_parts[-3], path_parts[-2], path_parts[-1]
+    api_url = f"https://api.github.com/repos/{owner}/{repo}/commits/{sha}"
+    response = requests.get(api_url)
+
+    if response.status_code != 200:
+        raise Exception(f"Failed to get commit: {response.status_code} {response.text}")
+
+    commit_data = response.json()
+    methods_by_file = {}
+
+    for file in commit_data.get("files", []):
+        filename = file.get("filename")
+        raw_url = file.get("raw_url")
+        if not raw_url or not filename.endswith(".java"):
+            continue
+        raw_code = requests.get(raw_url).text
+        methods = extract_java_methods_javalang(raw_code)
+        methods_by_file[filename] = methods
+
+        # Remove entries where the filename includes a slash (e.g. "dir/File.java")
+        #methods_by_file = {fname: methods for fname, methods in methods_by_file.items() if '/' not in fname}
+        all_methods = list(chain.from_iterable(methods_by_file.values()))
+    return all_methods

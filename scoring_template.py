@@ -37,5 +37,9 @@ Binary output:
     response = result.split("Binary output:")[-1].strip()
     return response
 
-output = analyze_commit_codellama({{commit_msg}}, {{original_code}}, {{revised_code}}, {{context_code}})
+commit_m = """{{commit_msg}}"""
+og_code = """{{original_code}}"""
+new_code = """{{revised_code}}"""
+context_c = """{{context_code}}"""
+output = analyze_commit_codellama(commit_m, og_code, new_code, context_c)
 print("CodeLlama Output:", output)
